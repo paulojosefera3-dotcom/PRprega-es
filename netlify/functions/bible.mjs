@@ -1,11 +1,8 @@
-import { allowedRequest, json, requireAuth } from "./_shared.mjs";
+import { allowedRequest, json } from "./_shared.mjs";
 
 export default async function handler(request) {
   if (request.method !== "GET") return json({ error: "Método não permitido." }, 405, { Allow: "GET" });
   if (!allowedRequest(request)) return json({ error: "Origem da solicitação não permitida." }, 403);
-  const denied = requireAuth(request);
-  if (denied) return denied;
-
   const apiKey = process.env.BIBLELEXICON_API_KEY || "";
   if (!apiKey) {
     return json({ error: "Para usar a ARA ou a ARC, adicione BIBLELEXICON_API_KEY nos segredos do Netlify e publique um novo deploy." }, 503);
