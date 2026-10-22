@@ -5,10 +5,16 @@ on:
     paths:
       - "android/**"
       - ".github/workflows/build-android-apk.yml"
+  push:
+    branches:
+      - codex/android-app-standalone-20261021
+    paths:
+      - "android/**"
+      - ".github/workflows/build-android-apk.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -41,10 +47,23 @@ jobs:
         working-directory: android
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: PR-Pregacoes-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish standalone APK download
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="pr-pregacoes-apk-${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" android/app/build/outputs/apk/debug/app-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "PR Pregações APK" \
+            --notes "APK para instalação pessoal no Android. O app carrega a versão hospedada no Netlify." \
+            --target "$GITHUB_SHA" \
+            --latest=false
