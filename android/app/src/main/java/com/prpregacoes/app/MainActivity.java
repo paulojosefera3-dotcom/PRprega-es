@@ -18,7 +18,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 public final class MainActivity extends Activity {
-    private static final String HOME_URL = "https://prpregacoes.netlify.app/";
+    private static final String HOME_URL = "https://prpregaes.netlify.app/";
     private static final int FILE_CHOOSER_REQUEST = 701;
 
     private WebView webView;
