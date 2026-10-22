@@ -8,10 +8,14 @@ export default async function handler(request) {
 
   const apiKey = process.env.BIBLELEXICON_API_KEY || "";
   if (!apiKey) {
-    return json({ error: "Para usar a ARC, adicione BIBLELEXICON_API_KEY nos segredos do Netlify e publique um novo deploy." }, 503);
+    return json({ error: "Para usar a ARA ou a ARC, adicione BIBLELEXICON_API_KEY nos segredos do Netlify e publique um novo deploy." }, 503);
   }
 
   const url = new URL(request.url);
+  const requestedVersion = url.searchParams.get("version") || "arc";
+  const version = requestedVersion === "ara" ? "ra" : requestedVersion === "arc" ? "rc" : "";
+  if (!version) return json({ error: "Versão bíblica inválida." }, 400);
+  const versionName = version === "ra" ? "ARA" : "ARC";
   const book = Number(url.searchParams.get("book"));
   const chapter = Number(url.searchParams.get("chapter"));
   if (!Number.isInteger(book) || book < 1 || book > 66 || !Number.isInteger(chapter) || chapter < 1 || chapter > 150) {
@@ -19,7 +23,7 @@ export default async function handler(request) {
   }
 
   try {
-    const upstream = await fetch("https://biblelexicon.com.br/api/v1/bibles/rc/" + book + "/" + chapter, {
+    const upstream = await fetch("https://biblelexicon.com.br/api/v1/bibles/" + version + "/" + book + "/" + chapter, {
       method: "GET",
       headers: { Accept: "application/json", "X-API-Key": apiKey },
       signal: AbortSignal.timeout(20_000)
@@ -27,7 +31,7 @@ export default async function handler(request) {
     const payload = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
       if (upstream.status === 401) return json({ error: "A chave BibleLexicon está inválida. Confira BIBLELEXICON_API_KEY nos segredos do Netlify." }, 502);
-      if (upstream.status === 403) return json({ error: "O plano da BibleLexicon não permite consultar a ARC." }, 502);
+      if (upstream.status === 403) return json({ error: "O plano da BibleLexicon não permite consultar a " + versionName + "." }, 502);
       if (upstream.status === 429) return json({ error: "A cota da API bíblica foi atingida. Tente novamente mais tarde." }, 429);
       const detail = String(payload && (payload.error || payload.message) || "A API bíblica não conseguiu carregar o capítulo.").slice(0, 300);
       return json({ error: detail }, upstream.status >= 500 ? 502 : upstream.status);
